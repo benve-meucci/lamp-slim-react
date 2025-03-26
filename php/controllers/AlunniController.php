@@ -13,6 +13,14 @@ class AlunniController
     return $response->withHeader("Content-type", "application/json")->withStatus(200);
   }
 
+
+  public function show(Request $request, Response $response, $args){
+    $response->getBody()->write("ciao ". $args["id"]);
+    return $response;
+  }
+
+
+
   public function destroy(Request $request, Response $response, $args){
     $response->getBody()->write("ciao");
     return $response;
@@ -22,7 +30,7 @@ class AlunniController
     
     $body = json_decode($request->getBody()->getContents(), true);    
     $nome = $body["nome"];
-    $cognome = $body["cognome"];;
+    $cognome = $body["cognome"];
 
     $response->getBody()->write($cognome);
     return $response;

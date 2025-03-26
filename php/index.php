@@ -10,7 +10,7 @@ $app = AppFactory::create();
 $app->get('/alunni', "AlunniController:index");
 
 // curl http://localhost:8080/alunni/2
-$app->get('/alunni/{id}', "AlunniController:show");
+$app->get('/alunni/{id:\d+}', "AlunniController:show");
 
 
 // curl -X POST http://locahost:8080/alunni -H "Content-Type: application/json" -d '{"nome": "ciccio", "cognome": "bello"}'
