@@ -9,7 +9,8 @@ has_react_start() {
 
 bootstrap_react() {
   echo "Bootstrapping React app in /app..."
-  tmp_app_dir="$(mktemp -d)"
+  tmp_app_dir="/tmp/cra-bootstrap-$(date +%s)-$$"
+  mkdir -p "$tmp_app_dir"
   npx -y create-react-app "$tmp_app_dir" --use-npm --skip-git
 
   # Keep .gitkeep (if present) but reset all other files to avoid stale/broken partial scaffolds.
