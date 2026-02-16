@@ -1,9 +1,16 @@
 #!/bin/bash
+set -e
 
 cd /app
 if [ ! -f package.json ]; then
-  rm .gitkeep
-  npx -y create-react-app . 
+  TMP_APP_DIR="$(mktemp -d)"
+  npx -y create-react-app "$TMP_APP_DIR" --use-npm --skip-git
+  cp -a "$TMP_APP_DIR"/. /app/
+  rm -rf "$TMP_APP_DIR"
 fi
-npm install
+
+if [ ! -d node_modules ]; then
+  npm install
+fi
+
 npm start
