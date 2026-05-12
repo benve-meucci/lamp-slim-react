@@ -17,6 +17,9 @@ proxy:
     path: /up
 
 registry:
+<% if ENV["KAMAL_REGISTRY_SERVER"] && !ENV["KAMAL_REGISTRY_SERVER"].empty? %>
+  server: <%= ENV["KAMAL_REGISTRY_SERVER"] %>
+<% end %>
   username: <%= ENV.fetch("KAMAL_REGISTRY_USERNAME") %>
   password:
     - KAMAL_REGISTRY_PASSWORD
