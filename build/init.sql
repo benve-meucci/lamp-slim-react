@@ -1,25 +1,31 @@
-CREATE TABLE `alunni` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `nome` VARCHAR(20) NOT NULL,
-  `cognome` VARCHAR(20) NOT NULL,
+CREATE TABLE `accounts` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `owner_name` VARCHAR(100) NOT NULL,
+  `currency` CHAR(3) NOT NULL DEFAULT 'EUR',
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE `certificazioni` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `alunno_id` INT(11) NOT NULL,
-  `titolo` VARCHAR(100) NOT NULL,
-  `votazione` INT(3) NOT NULL CHECK (`votazione` BETWEEN 0 AND 100),
-  `ente` VARCHAR(100) NOT NULL,
+CREATE TABLE `transactions` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `account_id` INT UNSIGNED NOT NULL,
+  `type` ENUM('deposit', 'withdrawal') NOT NULL,
+  `amount` DECIMAL(12,2) NOT NULL,
+  `description` VARCHAR(255) NOT NULL,
+  `balance_after` DECIMAL(12,2) NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  FOREIGN KEY (`alunno_id`) REFERENCES `alunni`(`id`) ON DELETE CASCADE
+  INDEX `idx_transactions_account_created` (`account_id`, `created_at`),
+  CONSTRAINT `fk_transactions_account`
+    FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
+    ON DELETE CASCADE,
+  CONSTRAINT `chk_transactions_amount_positive` CHECK (`amount` > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-INSERT INTO `alunni` (`nome`, `cognome`) VALUES
-('claudio', 'benve'),
-('ivan', 'bruno');
+INSERT INTO `accounts` (`id`, `owner_name`, `currency`) VALUES
+(1, 'Conto laboratorio', 'EUR');
 
-INSERT INTO `certificazioni` (`alunno_id`, `titolo`, `votazione`, `ente`) VALUES
-(1, 'Certificazione Python', 85, 'Coursera'),
-(1, 'Certificazione SQL', 90, 'Udemy'),
-(2, 'Certificazione Java', 78, 'Oracle');
+INSERT INTO `transactions` (`account_id`, `type`, `amount`, `description`, `balance_after`) VALUES
+(1, 'deposit', 1000.00, 'Saldo iniziale', 1000.00),
+(1, 'withdrawal', 125.50, 'Acquisto materiale', 874.50),
+(1, 'deposit', 250.00, 'Versamento contanti', 1124.50);

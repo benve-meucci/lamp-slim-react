@@ -1,61 +1,173 @@
-## Avvio
+# Mini Banking API
 
-Serve solo Docker Desktop oppure Docker Engine con il plugin Compose.
+Backend REST didattico in PHP/Slim per l'esercitazione descritta in `MiniBankingAPI.md`.
 
-Il progetto funziona anche senza file `.env`, usando i valori predefiniti del `docker-compose.yaml`.
-Se vuoi personalizzare porte o credenziali del database, parti dall'esempio:
+Non contiene frontend: gli studenti useranno questi endpoint JSON per costruire un frontend Angular in laboratorio.
+
+## Avvio locale
+
+Serve Docker Desktop oppure Docker Engine con il plugin Compose.
+
+Il progetto funziona anche senza file `.env`, usando i valori predefiniti del `docker-compose.yaml`. Per personalizzare porte, credenziali o CORS:
 
 ```bash
 cp .env.example .env
 ```
 
-Poi modifica `.env` e avvia i container:
+Poi avvia:
 
 ```bash
 docker compose up --build
 ```
 
-Poi apri:
+Endpoint base:
 
-- Frontend React: http://localhost:5173
-- API PHP/Slim: http://localhost:8080/alunni
+- API: http://localhost:8080
+- Health check: http://localhost:8080/up
+- phpMyAdmin opzionale: http://localhost:8081
 
-## phpMyAdmin
-
-phpMyAdmin e' opzionale. Avvialo solo quando serve:
+Per usare phpMyAdmin:
 
 ```bash
 docker compose --profile tools up --build
 ```
 
-Poi apri http://localhost:8081
-
-Credenziali database didattiche:
+Credenziali database didattiche predefinite:
 
 - Server: `db`
-- Utente: valore di `DB_USERNAME`
-- Password: valore di `DB_PASSWORD`
-- Database: valore di `DB_DATABASE`
+- Database: `bank`
+- Utente: `bank`
+- Password: `bank`
 
 ## Reset completo
 
-Per cancellare database e dipendenze installate nei volumi Docker:
+Per ricreare database e dipendenze installate nei volumi Docker:
 
 ```bash
 docker compose down -v
+docker compose up --build
 ```
 
-## Deploy con Kamal
+## Endpoint
+
+Gli endpoint sono disponibili sia senza prefisso sia con prefisso `/api`, per esempio:
+
+- `GET /accounts/1/balance`
+- `GET /api/accounts/1/balance`
+
+Movimenti:
+
+- `GET /accounts/1/transactions`
+- `GET /accounts/1/transactions/5`
+- `POST /accounts/1/deposits`
+- `POST /accounts/1/withdrawals`
+- `PUT /accounts/1/transactions/5`
+- `DELETE /accounts/1/transactions/5`
+
+Saldo e conversioni:
+
+- `GET /accounts/1/balance`
+- `GET /accounts/1/balance/convert/fiat?to=USD`
+- `GET /accounts/1/balance/convert/crypto?to=BTC`
+
+## Esempi di chiamata
+
+Lista movimenti:
+
+```bash
+curl http://localhost:8080/accounts/1/transactions
+```
+
+Dettaglio movimento:
+
+```bash
+curl http://localhost:8080/accounts/1/transactions/1
+```
+
+Deposito:
+
+```bash
+curl -X POST http://localhost:8080/accounts/1/deposits \
+  -H 'Content-Type: application/json' \
+  -d '{"amount": 50, "description": "Versamento laboratorio"}'
+```
+
+Prelievo:
+
+```bash
+curl -X POST http://localhost:8080/accounts/1/withdrawals \
+  -H 'Content-Type: application/json' \
+  -d '{"amount": 20, "description": "Acquisto materiale"}'
+```
+
+Modifica descrizione:
+
+```bash
+curl -X PUT http://localhost:8080/accounts/1/transactions/1 \
+  -H 'Content-Type: application/json' \
+  -d '{"description": "Descrizione aggiornata"}'
+```
+
+Eliminazione:
+
+```bash
+curl -X DELETE http://localhost:8080/accounts/1/transactions/3
+```
+
+Regola scelta: si puo' eliminare solo l'ultimo movimento del conto, così non si invalidano i saldi intermedi salvati in `balance_after`.
+
+Saldo:
+
+```bash
+curl http://localhost:8080/accounts/1/balance
+```
+
+Conversione fiat con Frankfurter:
+
+```bash
+curl 'http://localhost:8080/accounts/1/balance/convert/fiat?to=USD'
+```
+
+Conversione crypto con Binance:
+
+```bash
+curl 'http://localhost:8080/accounts/1/balance/convert/crypto?to=BTC'
+```
+
+## CORS per Angular
+
+Per default il backend risponde con:
+
+```env
+CORS_ORIGIN=*
+```
+
+In laboratorio puoi limitarlo al dev server Angular:
+
+```env
+CORS_ORIGIN=http://localhost:4200
+```
+
+## Schema database
+
+Lo schema e i dati iniziali sono in `build/init.sql`.
+
+Tabelle:
+
+- `accounts`: conto bancario semplificato
+- `transactions`: depositi e prelievi con `balance_after`
+
+Il database iniziale crea il conto `1` in EUR con alcuni movimenti di esempio.
+
+## Deploy con Kamal e GHCR
 
 Il deploy usa Kamal 2 solo per il backend Slim. MariaDB gira come accessory persistente.
 
-Il frontend React resta fuori dal deploy Kamal: puoi pubblicarlo separatamente come sito statico, oppure tenerlo solo per lo sviluppo in laboratorio.
-
 Prerequisiti:
 
-- Un server Linux raggiungibile via SSH
+- un server Linux raggiungibile via SSH
 - Docker installabile o gia' installato sul server
-- Un account su un registry Docker, per esempio Docker Hub
+- un account GitHub con permessi per pubblicare su GHCR
 - Kamal installato in locale: `gem install kamal`
 
 Prepara le variabili:
@@ -67,9 +179,10 @@ cp .env.example .env
 Poi modifica `.env` impostando almeno:
 
 - `KAMAL_HOST`: IP o hostname del server
-- `KAMAL_IMAGE`: immagine Docker da pubblicare, per esempio `tuo-utente/lamp-slim-react`
-- `KAMAL_REGISTRY_USERNAME`: utente del registry Docker
-- `KAMAL_REGISTRY_PASSWORD`: password o token del registry Docker
+- `KAMAL_IMAGE`: immagine GHCR senza prefisso registry, per esempio `tuo-utente-github/mini-banking-api`
+- `KAMAL_REGISTRY_SERVER=ghcr.io`
+- `KAMAL_REGISTRY_USERNAME`: utente GitHub
+- `KAMAL_REGISTRY_PASSWORD`: token GitHub con permesso `write:packages`
 - `DB_PASSWORD` e `DB_ROOT_PASSWORD`: password del database in produzione
 
 Se hai un dominio che punta al server, imposta anche `KAMAL_DOMAIN`. In quel caso Kamal abilita HTTPS automatico con Let's Encrypt.
@@ -91,21 +204,20 @@ Comandi utili:
 ```bash
 kamal app logs
 kamal accessory logs db
-kamal accessory exec db "mariadb -uscuola -p"
+kamal accessory exec db "mariadb -ubank -p"
 ```
-
-La configurazione Kamal e' in `config/deploy.yml`. I segreti vengono letti da `.kamal/secrets`, che punta alle variabili definite nell'ambiente o nel file `.env`.
 
 Dopo il deploy, l'API sara' disponibile su:
 
-- `https://KAMAL_DOMAIN/api/alunni`, se hai impostato `KAMAL_DOMAIN`
-- `http://KAMAL_HOST/api/alunni`, se usi solo l'IP del server
+- `https://KAMAL_DOMAIN/accounts/1/balance`, se hai impostato `KAMAL_DOMAIN`
+- `http://KAMAL_HOST/accounts/1/balance`, se usi solo l'IP del server
 
 ## Struttura
 
-- `app`: frontend React con Vite
 - `php`: API PHP con Slim
-- `build/init.sql`: schema e dati iniziali del database
-- `config/deploy.yml`: configurazione Kamal per il deploy
+- `build/init.sql`: schema e dati iniziali MariaDB
+- `build/Dockerfile.php`: immagine locale per sviluppo
+- `build/Dockerfile.deploy`: immagine production per Kamal
+- `config/deploy.yml`: configurazione Kamal
 
-Database, `node_modules` e `vendor` vivono in volumi Docker, quindi non sporcano il repository.
+Database e `vendor` vivono in volumi Docker, quindi non sporcano il repository.

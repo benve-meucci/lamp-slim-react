@@ -4,10 +4,12 @@ services:
       context: ./build
       dockerfile: Dockerfile.php
     environment:
+      APP_ENV: development
       DB_HOST: db
-      DB_DATABASE: ${DB_DATABASE:-scuola}
-      DB_USERNAME: ${DB_USERNAME:-scuola}
-      DB_PASSWORD: ${DB_PASSWORD:-scuola}
+      DB_DATABASE: ${DB_DATABASE:-bank}
+      DB_USERNAME: ${DB_USERNAME:-bank}
+      DB_PASSWORD: ${DB_PASSWORD:-bank}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
     ports:
       - ${API_PORT:-8080}:80
     volumes:
@@ -21,9 +23,9 @@ services:
     image: mariadb:11.4
     environment:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
-      MARIADB_DATABASE: ${DB_DATABASE:-scuola}
-      MARIADB_USER: ${DB_USERNAME:-scuola}
-      MARIADB_PASSWORD: ${DB_PASSWORD:-scuola}
+      MARIADB_DATABASE: ${DB_DATABASE:-bank}
+      MARIADB_USER: ${DB_USERNAME:-bank}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-bank}
     volumes:
       - mariadb_data:/var/lib/mysql
       - ./build/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
@@ -33,18 +35,6 @@ services:
       timeout: 3s
       retries: 20
 
-  frontend:
-    build:
-      context: ./build
-      dockerfile: Dockerfile.node
-    ports:
-      - ${FRONTEND_PORT:-5173}:5173
-    volumes:
-      - ./app:/app
-      - node_modules:/app/node_modules
-    depends_on:
-      - api
-
   phpmyadmin:
     image: phpmyadmin:5-apache
     profiles:
@@ -53,12 +43,11 @@ services:
       - ${PHPMYADMIN_PORT:-8081}:80
     environment:
       PMA_HOST: db
-      PMA_USER: ${DB_USERNAME:-scuola}
-      PMA_PASSWORD: ${DB_PASSWORD:-scuola}
+      PMA_USER: ${DB_USERNAME:-bank}
+      PMA_PASSWORD: ${DB_PASSWORD:-bank}
     depends_on:
       - db
 
 volumes:
   mariadb_data:
-  node_modules:
   php_vendor:
