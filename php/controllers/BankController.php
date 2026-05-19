@@ -115,6 +115,23 @@ class BankController
         return is_array($data) ? $data : null;
     }
 
+    private function fetchBinanceMarketData(string $path, array $query): ?array
+    {
+        $hosts = [
+            'https://api.binance.com',
+            'https://data-api.binance.vision',
+        ];
+
+        foreach ($hosts as $host) {
+            $data = $this->fetchJson($host . $path . '?' . http_build_query($query));
+            if ($data !== null) {
+                return $data;
+            }
+        }
+
+        return null;
+    }
+
     public function index(Request $request, Response $response): Response
     {
         return $this->json($response, [
@@ -390,9 +407,9 @@ class BankController
 
         $from = strtoupper($account['currency']);
         $symbol = $to . $from;
-        $exchangeInfo = $this->fetchJson('https://api.binance.com/api/v3/exchangeInfo?' . http_build_query([
+        $exchangeInfo = $this->fetchBinanceMarketData('/api/v3/exchangeInfo', [
             'symbol' => $symbol,
-        ]));
+        ]);
 
         if ($exchangeInfo === null) {
             return $this->json($response, ['error' => 'Binance API unavailable'], 502);
@@ -406,9 +423,9 @@ class BankController
             ], 400);
         }
 
-        $ticker = $this->fetchJson('https://api.binance.com/api/v3/ticker/price?' . http_build_query([
+        $ticker = $this->fetchBinanceMarketData('/api/v3/ticker/price', [
             'symbol' => $symbol,
-        ]));
+        ]);
 
         if ($ticker === null || !isset($ticker['price'])) {
             return $this->json($response, ['error' => 'Binance price unavailable'], 502);

@@ -33,9 +33,9 @@ env:
   clear:
     APP_ENV: production
     DB_HOST: db
-    DB_DATABASE: <%= ENV.fetch("DB_DATABASE", "bank") %>
-    DB_USERNAME: <%= ENV.fetch("DB_USERNAME", "bank") %>
-    CORS_ORIGIN: <%= ENV.fetch("CORS_ORIGIN", "*") %>
+    DB_DATABASE: "<%= ENV.fetch("DB_DATABASE", "bank") %>"
+    DB_USERNAME: "<%= ENV.fetch("DB_USERNAME", "bank") %>"
+    CORS_ORIGIN: "<%= ENV.fetch("CORS_ORIGIN", "*") %>"
   secret:
     - DB_PASSWORD
 
@@ -46,8 +46,8 @@ accessories:
     host: <%= ENV.fetch("KAMAL_HOST") %>
     env:
       clear:
-        MARIADB_DATABASE: <%= ENV.fetch("DB_DATABASE", "bank") %>
-        MARIADB_USER: <%= ENV.fetch("DB_USERNAME", "bank") %>
+        MARIADB_DATABASE: "<%= ENV.fetch("DB_DATABASE", "bank") %>"
+        MARIADB_USER: "<%= ENV.fetch("DB_USERNAME", "bank") %>"
       secret:
         - MARIADB_PASSWORD:DB_PASSWORD
         - MARIADB_ROOT_PASSWORD:DB_ROOT_PASSWORD
