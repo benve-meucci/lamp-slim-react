@@ -54,7 +54,20 @@ class BankController
         $stmt->execute();
         $account = $stmt->get_result()->fetch_assoc();
 
-        return $account ?: null;
+        if (!$account) {
+            return null;
+        }
+
+        $account['id'] = (int) $account['id'];
+
+        return $account;
+    }
+
+    private function formatAccount(array $account): array
+    {
+        $account['id'] = (int) $account['id'];
+
+        return $account;
     }
 
     private function currentBalance(mysqli $db, int $accountId): float
@@ -83,7 +96,17 @@ class BankController
         $stmt->execute();
         $transaction = $stmt->get_result()->fetch_assoc();
 
-        return $transaction ?: null;
+        return $transaction ? $this->formatTransaction($transaction) : null;
+    }
+
+    private function formatTransaction(array $transaction): array
+    {
+        $transaction['id'] = (int) $transaction['id'];
+        $transaction['account_id'] = (int) $transaction['account_id'];
+        $transaction['amount'] = (float) $transaction['amount'];
+        $transaction['balance_after'] = (float) $transaction['balance_after'];
+
+        return $transaction;
     }
 
     private function validateAmount(mixed $value): ?float
@@ -139,6 +162,8 @@ class BankController
             'status' => 'ok',
             'endpoints' => [
                 'GET /accounts/{id}/transactions',
+                'GET /accounts',
+                'GET /accounts/{id}',
                 'GET /accounts/{id}/transactions/{transaction_id}',
                 'POST /accounts/{id}/deposits',
                 'POST /accounts/{id}/withdrawals',
@@ -149,6 +174,36 @@ class BankController
                 'GET /accounts/{id}/balance/convert/crypto?to=BTC',
             ],
         ]);
+    }
+
+    public function listAccounts(Request $request, Response $response): Response
+    {
+        $db = $this->db();
+        $result = $db->query('
+            SELECT id, owner_name, currency, created_at
+            FROM accounts
+            ORDER BY id
+        ');
+
+        $accounts = array_map(
+            fn (array $account): array => $this->formatAccount($account),
+            $result->fetch_all(MYSQLI_ASSOC)
+        );
+
+        return $this->json($response, ['accounts' => $accounts]);
+    }
+
+    public function showAccount(Request $request, Response $response, array $args): Response
+    {
+        $accountId = (int) $args['id'];
+        $db = $this->db();
+        $account = $this->findAccount($db, $accountId);
+
+        if (!$account) {
+            return $this->json($response, ['error' => 'Account not found'], 404);
+        }
+
+        return $this->json($response, ['account' => $account]);
     }
 
     public function listTransactions(Request $request, Response $response, array $args): Response
@@ -168,10 +223,14 @@ class BankController
         ');
         $stmt->bind_param('i', $accountId);
         $stmt->execute();
+        $transactions = array_map(
+            fn (array $transaction): array => $this->formatTransaction($transaction),
+            $stmt->get_result()->fetch_all(MYSQLI_ASSOC)
+        );
 
         return $this->json($response, [
             'account_id' => $accountId,
-            'transactions' => $stmt->get_result()->fetch_all(MYSQLI_ASSOC),
+            'transactions' => $transactions,
         ]);
     }
 

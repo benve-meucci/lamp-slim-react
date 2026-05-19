@@ -57,6 +57,8 @@ Gli endpoint sono disponibili sia senza prefisso sia con prefisso `/api`, per es
 
 Movimenti:
 
+- `GET /accounts`
+- `GET /accounts/1`
 - `GET /accounts/1/transactions`
 - `GET /accounts/1/transactions/5`
 - `POST /accounts/1/deposits`
@@ -76,6 +78,18 @@ Lista movimenti:
 
 ```bash
 curl http://localhost:8080/accounts/1/transactions
+```
+
+Lista conti:
+
+```bash
+curl http://localhost:8080/accounts
+```
+
+Dettaglio conto:
+
+```bash
+curl http://localhost:8080/accounts/1
 ```
 
 Dettaglio movimento:

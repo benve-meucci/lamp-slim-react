@@ -47,6 +47,8 @@ $app->get('/up', function (Request $request, Response $response, array $args) {
 function bankRoutes($app, BankController $bank, string $prefix): void
 {
     $app->get($prefix . '/', [$bank, 'index']);
+    $app->get($prefix . '/accounts', [$bank, 'listAccounts']);
+    $app->get($prefix . '/accounts/{id}', [$bank, 'showAccount']);
     $app->get($prefix . '/accounts/{id}/transactions', [$bank, 'listTransactions']);
     $app->get($prefix . '/accounts/{id}/transactions/{transaction_id}', [$bank, 'showTransaction']);
     $app->post($prefix . '/accounts/{id}/deposits', [$bank, 'createDeposit']);
